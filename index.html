@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title></title>
+  <title>Inventory</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -37,25 +37,16 @@
 
   <script>
     window.onload = function() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-          var latitude = position.coords.latitude;
-          var longitude = position.coords.longitude;
-
-          // Using the OpenStreetMap Nominatim API for reverse geocoding
-          var nominatimAPI = "https://nominatim.openstreetmap.org/reverse?lat=" + latitude + "&lon=" + longitude + "&format=json";
-
-          fetch(nominatimAPI)
-            .then(response => response.json())
-            .then(data => {
-              var address = data.display_name;
-              document.getElementById("locationText").textContent = address;
-            })
-            .catch(error => console.error('Error:', error));
-        });
-      } else {
-        document.getElementById("locationText").textContent = "Geolocation is not supported by this browser.";
+      var url = window.location.href;
+      var number = url.substring(url.lastIndexOf('/') + 1);
+      if (isValidNumber(number)) {
+        document.getElementById("locationText").textContent = "Item Number: " + number;
       }
+    }
+
+    function isValidNumber(number) {
+      // Check if the number is between 0001 and 1000
+      return /^\d{4}$/.test(number) && parseInt(number, 10) >= 1 && parseInt(number, 10) <= 1000;
     }
   </script>
 </body>
