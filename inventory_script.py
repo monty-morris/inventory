@@ -1,60 +1,69 @@
 import os
-import subprocess
+import gspread
+from google.oauth2 import service_account
 
-# Function to get the next tracking number
 def get_next_tracking_number():
     if not os.path.exists("tracking_number.txt"):
-        with open("tracking_number.txt", "w") as file:
-            file.write("0000")
-
-    with open("tracking_number.txt", "r+") as file:
-        tracking_number = int(file.read())
-        file.seek(0)
-        file.write(str(tracking_number + 1).zfill(4))
-        file.truncate()
-        return str(tracking_number).zfill(4)
-
-# Function to create HTML file for the new item
-def add_html_file(tracking_number, item_name):
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Item {tracking_number}</title>
-    </head>
-    <body>
-        <h1>This item belongs to Monty Morris</h1>
-        <p>Tracking Number: {tracking_number}</p>
-        <p>Item Name: {item_name}</p>
-        <p>Email: montymorris1@icloud.com</p>
-        <p>Phone: 07587434466</p>
-    </body>
-    </html>
-    """
-
-    with open(f"{tracking_number}.html", "w") as file:
-        file.write(html_content)
-
-# Main function
-def main():
-    # Ask for the item name
-    item_name = input("Enter item name: ")
-
-    # Reset the tracking number if requested
-    if item_name == "counter_reset":
-        with open("tracking_number.txt", "w") as file:
-            file.write("0000")
+        with open("tracking_number.txt", "w") as f:
+            f.write("0001")
+        return "0001"
     else:
-        # Increment the tracking number
-        tracking_number = get_next_tracking_number()
+        with open("tracking_number.txt", "r+") as f:
+            tracking_number = f.read()
+            next_number = str(int(tracking_number) + 1).zfill(4)
+            f.seek(0)
+            f.write(next_number)
+            f.truncate()
+            return next_number
 
-        # Create HTML file for the new item
-        add_html_file(tracking_number, item_name)
+def create_html_page(item_name, tracking_number):
+    html_content = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item {tracking_number}</title>
+</head>
+<body>
+    <h1>Item {tracking_number}</h1>
+    <p>This item belongs to Monty Morris. Details are below:</p>
+    <ul>
+        <li>Name: Monty Morris</li>
+        <li>Email: montymorris1@icloud.com</li>
+        <li>Phone: 07587434466</li>
+        <li>Item Name: {item_name}</li>
+        <li>Tracking Number: {tracking_number}</li>
+    </ul>
+</body>
+</html>
+"""
+    with open(f"{tracking_number}.html", "w") as f:
+        f.write(html_content)
 
-        # Push changes to Git repository
-        subprocess.run(["git", "add", "."])
-        subprocess.run(["git", "commit", "-m", f"Added item {tracking_number}"])
-        subprocess.run(["git", "push", "origin", "main"])
+def update_google_sheets(item_name, tracking_number):
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    credentials = service_account.Credentials.from_service_account_file("/Users/monty/Documents/Inventory/credentials.json", scopes=scope)
+    client = gspread.authorize(credentials)
+
+    spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
+    sheet = client.open_by_key(spreadsheet_id).sheet1
+
+    cell = sheet.find(tracking_number, in_column=2)
+    row = cell.row
+    sheet.update_cell(row, 1, item_name)
+
+def main():
+    item_name = input("Enter item name: ")
+    if item_name.lower() == "counter_reset":
+        with open("tracking_number.txt", "w") as f:
+            f.write("0001")
+        print("Tracking number reset to 0001")
+        return
+    tracking_number = get_next_tracking_number()
+    create_html_page(item_name, tracking_number)
+    update_google_sheets(item_name, tracking_number)
+    print(f"Item '{item_name}' with tracking number '{tracking_number}' has been added.")
 
 if __name__ == "__main__":
     main()
