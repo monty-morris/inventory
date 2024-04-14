@@ -37,7 +37,7 @@ def create_html_page(tracking_number, item_name):
         file.write(html_content)
 
 def main():
-    action = input("Enter action (item name or counter_reset): ").strip()
+    action = input("Enter item name or 'counter_reset' to reset tracking number: ").strip()
 
     if action == "counter_reset":
         subprocess.run(["git", "pull", "origin", "main"])
