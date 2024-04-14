@@ -31,7 +31,7 @@
   <div class="container">
     <p>Monty Morris</p>
     <p>Email: <a href="mailto:montymorris1@icloud.com">montymorris1@icloud.com</a></p>
-    <p>Phone: 07857434466</p>
+    <p>Phone: 07587434466</p>
     <p class="location" id="locationText">Your location will appear here</p>
   </div>
 
@@ -63,40 +63,31 @@
     }
 
     function sendToGoogleSheets(location) {
-      var CLIENT_ID = ''; // No need for client ID for API key usage
       var API_KEY = 'AIzaSyARh2m6kI8o53fdHlKBU1YqioKeB2-3XDk';
-      var DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
-      var SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+      var url = "https://sheets.googleapis.com/v4/spreadsheets/1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY/values/Sheet1!A1:append?valueInputOption=RAW&key=" + API_KEY;
+      var data = {
+        values: [
+          [location]
+        ]
+      };
 
-      gapi.load('client:auth2', initClient);
-
-      function initClient() {
-        gapi.client.init({
-          apiKey: API_KEY,
-          discoveryDocs: DISCOVERY_DOCS,
-          scope: SCOPES
-        }).then(function () {
-          var values = [
-            [location]
-          ];
-          var body = {
-            values: values
-          };
-          gapi.client.sheets.spreadsheets.values.append({
-            spreadsheetId: '1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY',
-            range: 'Sheet1!A1', // Specify the cell where you want to append the location
-            valueInputOption: 'RAW',
-            resource: body
-          }).then(function(response) {
-            console.log('Location added to Google Sheets:', response);
-          }, function(reason) {
-            console.error('Error adding location to Google Sheets:', reason.result.error.message);
-          });
-        });
-      }
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        console.log('Location added to Google Sheets:', response);
+      })
+      .catch(error => {
+        console.error('Error adding location to Google Sheets:', error);
+      });
     }
   </script>
-  <!-- Include the Google API client library -->
-  <script src="https://apis.google.com/js/api.js"></script>
 </body>
 </html>
