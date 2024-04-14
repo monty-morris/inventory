@@ -44,7 +44,7 @@ def main():
         # Push changes to Git repository
         subprocess.run(["git", "add", "."])
         subprocess.run(["git", "commit", "-m", f"Added item {tracking_number}"])
-        subprocess.run(["git", "push", "origin", "master"])
+        subprocess.run(["git", "push", "origin", "main"])
 
 if __name__ == "__main__":
     main()
