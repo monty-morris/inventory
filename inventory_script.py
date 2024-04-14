@@ -1,5 +1,6 @@
 import os
 import subprocess
+from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -45,37 +46,14 @@ def update_google_sheets(item_name, tracking_number):
     client = gspread.authorize(credentials)
     spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
     sheet = client.open_by_key(spreadsheet_id).sheet1
-    row = sheet.find(tracking_number).row
-    sheet.update_cell(row, 1, "")
+    sheet.update_cell(3, 1, "")  # Clear the item name in the 3rd row, 1st column
+    print(f"Item name cleared in Google Sheets for tracking number: {tracking_number}")
 
 def delete_html_files():
     for i in range(10000):
         html_file = f"{str(i).zfill(4)}.html"
         if os.path.exists(html_file):
             os.remove(html_file)
-
-def delete_google_sheet_data():
-    scope = ['https://www.googleapis.com/auth/spreadsheets']
-    credentials = Credentials.from_service_account_file("/Users/monty/Documents/Inventory/credentials.json", scopes=scope)
-    client = gspread.authorize(credentials)
-    spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
-    sheet = client.open_by_key(spreadsheet_id).sheet1
-    items = sheet.col_values(1)
-    for i in range(2, len(items) + 1):
-        sheet.update_cell(i, 1, "")
-
-def complete_reset():
-    confirmation = input("Are you sure you want to perform a complete reset? (y/n): ").strip().lower()
-    if confirmation in ["y", "yes"]:
-        delete_html_files()
-        delete_google_sheet_data()
-        subprocess.run(["git", "pull", "origin", "main"])
-        subprocess.run(["git", "add", "."])
-        subprocess.run(["git", "commit", "-m", "'Perform complete reset'"])
-        subprocess.run(["git", "push", "origin", "main"])
-        print("Complete reset performed successfully.")
-    else:
-        print("Reset cancelled.")
 
 def main():
     action = input("Enter item name: ").strip()
@@ -90,7 +68,17 @@ def main():
         subprocess.run(["git", "push", "origin", "main"])
         print("Tracking number reset to 0001.")
     elif action == "complete_reset":
-        complete_reset()
+        confirmation = input("Are you sure you want to perform a complete reset? (y/n): ").strip().lower()
+        if confirmation in ["y", "yes"]:
+            delete_html_files()
+            update_google_sheets("", "")  # Clear the item names in Google Sheets
+            subprocess.run(["git", "pull", "origin", "main"])
+            subprocess.run(["git", "add", "."])
+            subprocess.run(["git", "commit", "-m", "'Perform complete reset'"])
+            subprocess.run(["git", "push", "origin", "main"])
+            print("Complete reset performed successfully.")
+        else:
+            print("Reset cancelled.")
     else:
         item_name = action
         tracking_number = get_next_tracking_number()
