@@ -1,7 +1,6 @@
 import os
 import subprocess
-import re
-import time  # Importing the time module for adding delay
+import re  # Added import statement for regular expressions
 from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
@@ -50,7 +49,11 @@ def update_google_sheets(item_name, tracking_number):
     sheet = client.open_by_key(spreadsheet_id).sheet1
     row = sheet.find(tracking_number).row
     sheet.update_cell(row, 1, item_name)
-    time.sleep(1)  # Add a 1-second delay to avoid quota exceeded error
+
+def delete_html_files():
+    for i in range(10000):
+        if os.path.exists(f"{str(i).zfill(4)}.html"):
+            os.remove(f"{str(i).zfill(4)}.html")
 
 def delete_google_sheet_entries():
     scope = ['https://www.googleapis.com/auth/spreadsheets']
@@ -61,7 +64,6 @@ def delete_google_sheet_entries():
     cell_list = sheet.findall(re.compile(r'\b\d{4}\b'))
     for cell in cell_list:
         sheet.update_cell(cell.row, 1, '')
-        time.sleep(1)  # Add a 1-second delay to avoid quota exceeded error
 
 def main():
     action = input("Enter item name: ").strip()
@@ -77,8 +79,9 @@ def main():
             subprocess.run(["git", "commit", "-m", "'Reset tracking number to 0001'"])
             subprocess.run(["git", "push", "origin", "main"])
             print("Tracking number reset to 0001.")
+            delete_html_files()
             delete_google_sheet_entries()
-            print("Google Sheet entries deleted.")
+            print("HTML files and Google Sheet entries deleted.")
         else:
             print("Reset cancelled.")
     elif action == "complete_reset":
@@ -92,8 +95,9 @@ def main():
             subprocess.run(["git", "commit", "-m", "'Reset tracking number to 0001'"])
             subprocess.run(["git", "push", "origin", "main"])
             print("Tracking number reset to 0001.")
+            delete_html_files()
             delete_google_sheet_entries()
-            print("Google Sheet entries deleted.")
+            print("HTML files and Google Sheet entries deleted.")
         else:
             print("Reset cancelled.")
     else:
