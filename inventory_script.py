@@ -1,6 +1,5 @@
 import os
 import subprocess
-from datetime import datetime
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -47,7 +46,7 @@ def update_google_sheets(item_name, tracking_number):
     spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
     sheet = client.open_by_key(spreadsheet_id).sheet1
     row = sheet.find(tracking_number).row
-    sheet.update_cell(row, 1, item_name)
+    sheet.update_cell(row, 1, "")
 
 def delete_html_files():
     for i in range(10000):
@@ -61,7 +60,9 @@ def delete_google_sheet_data():
     client = gspread.authorize(credentials)
     spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
     sheet = client.open_by_key(spreadsheet_id).sheet1
-    sheet.clear()
+    items = sheet.col_values(1)
+    for i in range(2, len(items) + 1):
+        sheet.update_cell(i, 1, "")
 
 def complete_reset():
     confirmation = input("Are you sure you want to perform a complete reset? (y/n): ").strip().lower()
