@@ -49,6 +49,33 @@ def update_google_sheets(item_name, tracking_number):
     row = sheet.find(tracking_number).row
     sheet.update_cell(row, 1, item_name)
 
+def delete_html_files():
+    for i in range(10000):
+        html_file = f"{str(i).zfill(4)}.html"
+        if os.path.exists(html_file):
+            os.remove(html_file)
+
+def delete_google_sheet_data():
+    scope = ['https://www.googleapis.com/auth/spreadsheets']
+    credentials = Credentials.from_service_account_file("/Users/monty/Documents/Inventory/credentials.json", scopes=scope)
+    client = gspread.authorize(credentials)
+    spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
+    sheet = client.open_by_key(spreadsheet_id).sheet1
+    sheet.clear()
+
+def complete_reset():
+    confirmation = input("Are you sure you want to perform a complete reset? (y/n): ").strip().lower()
+    if confirmation in ["y", "yes"]:
+        delete_html_files()
+        delete_google_sheet_data()
+        subprocess.run(["git", "pull", "origin", "main"])
+        subprocess.run(["git", "add", "."])
+        subprocess.run(["git", "commit", "-m", "'Perform complete reset'"])
+        subprocess.run(["git", "push", "origin", "main"])
+        print("Complete reset performed successfully.")
+    else:
+        print("Reset cancelled.")
+
 def main():
     action = input("Enter item name: ").strip()
 
@@ -61,6 +88,8 @@ def main():
         subprocess.run(["git", "commit", "-m", "'Reset tracking number to 0001'"])
         subprocess.run(["git", "push", "origin", "main"])
         print("Tracking number reset to 0001.")
+    elif action == "complete_reset":
+        complete_reset()
     else:
         item_name = action
         tracking_number = get_next_tracking_number()
