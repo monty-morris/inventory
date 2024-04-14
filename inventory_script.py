@@ -82,15 +82,15 @@ def create_html_file(item_name, tracking_number):
 
     return filename
 
-def commit_and_fetch_changes():
+def commit_and_push_changes():
     # Git add
     subprocess.run(["git", "add", "."])
 
     # Git commit
     subprocess.run(["git", "commit", "-m", "Added new item"])
 
-    # Git fetch
-    subprocess.run(["git", "fetch"])
+    # Git push
+    subprocess.run(["git", "push", "origin", "main"])
 
 def main():
     item_name = input("Enter the item name: ")
@@ -106,8 +106,8 @@ def main():
     html_filename = create_html_file(item_name, tracking_number)
     print(f"HTML file '{html_filename}' created successfully.")
 
-    # Commit changes to Git repository and fetch changes
-    commit_and_fetch_changes()
+    # Commit changes to Git repository and push changes to origin
+    commit_and_push_changes()
 
 if __name__ == "__main__":
     main()
