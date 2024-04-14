@@ -2,7 +2,7 @@ import os
 import subprocess
 
 PAT = "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"
-REPO_URL = "git@github.com:monty-morris/inventory.git"
+REPO_URL = "https://github.com/monty-morris/inventory.git"
 
 def get_next_tracking_number():
     # Check if a file exists to store the last used tracking number
