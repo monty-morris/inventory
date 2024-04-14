@@ -12,6 +12,8 @@ def get_next_tracking_number():
     else:
         with open("tracking_number.txt", "r+") as file:
             current_number = file.read()
+            if current_number.strip() == "":
+                current_number = "0000"
             next_number = str(int(current_number) + 1).zfill(4)
             file.seek(0)
             file.write(next_number)
