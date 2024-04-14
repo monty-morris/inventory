@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 def get_next_tracking_number():
     # Check if a file exists to store the last used tracking number
@@ -81,6 +82,16 @@ def create_html_file(item_name, tracking_number):
 
     return filename
 
+def commit_and_fetch_changes():
+    # Git add
+    subprocess.run(["git", "add", "."])
+
+    # Git commit
+    subprocess.run(["git", "commit", "-m", "Added new item"])
+
+    # Git fetch
+    subprocess.run(["git", "fetch"])
+
 def main():
     item_name = input("Enter the item name: ")
 
@@ -94,6 +105,9 @@ def main():
     # Create HTML file
     html_filename = create_html_file(item_name, tracking_number)
     print(f"HTML file '{html_filename}' created successfully.")
+
+    # Commit changes to Git repository and fetch changes
+    commit_and_fetch_changes()
 
 if __name__ == "__main__":
     main()
