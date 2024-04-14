@@ -5,6 +5,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.service_account import Credentials
 from git import Repo
 from datetime import datetime
+import time
 
 def get_next_tracking_number():
     if not os.path.exists("tracking_number.txt"):
@@ -50,8 +51,17 @@ def update_google_sheets(item_name, tracking_number):
     gc = gspread.authorize(credentials)
     spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
     sheet = gc.open_by_key(spreadsheet_id).sheet1
-    row = sheet.find(tracking_number).row
-    sheet.update_cell(row, 1, item_name)
+    while True:
+        try:
+            row = sheet.find(tracking_number).row
+            sheet.update_cell(row, 1, item_name)
+            break
+        except gspread.exceptions.APIError as e:
+            if e.response.status_code == 429:
+                print("Quota exceeded. Retrying in 60 seconds...")
+                time.sleep(60)
+            else:
+                raise e
 
 def commit_and_push_to_github(tracking_number):
     repo = Repo("/Users/monty/Documents/Inventory/")
@@ -60,37 +70,59 @@ def commit_and_push_to_github(tracking_number):
     origin = repo.remote(name="origin")
     origin.push()
 
+def delete_google_sheet_entries():
+    scope = ["https://www.googleapis.com/auth/spreadsheets"]
+    credentials = Credentials.from_service_account_file("/Users/monty/Documents/Inventory/credentials.json", scopes=scope)
+    gc = gspread.authorize(credentials)
+    spreadsheet_id = "1M0XRvO3zvHtmNkB6NUFkW10bs2EWSUbuFmRrhZDotJY"
+    sheet = gc.open_by_key(spreadsheet_id).sheet1
+    while True:
+        try:
+            cell_list = sheet.findall(re.compile(r'\b\d{4}\b'))
+            for cell in cell_list:
+                sheet.update_cell(cell.row, 1, '')
+            break
+        except gspread.exceptions.APIError as e:
+            if e.response.status_code == 429:
+                print("Quota exceeded. Retrying in 60 seconds...")
+                time.sleep(60)
+            else:
+                raise e
+
 def main():
-    action = input("Enter action (enter item name or counter_reset): ").strip().lower()
-    if action == "counter_reset":
-        confirmation = input("Are you sure you want to reset the counter? (confirm with 'y' or 'yes'): ").strip().lower()
-        if confirmation in ["y", "yes"]:
-            with open("tracking_number.txt", "w") as file:
-                file.write("0000")
-            print("Tracking number reset to 0000.")
-        else:
-            print("Reset canceled.")
-    else:
-        tracking_number = get_next_tracking_number()
-        if action == "complete_reset":
-            confirmation = input("Are you sure you want to perform a complete reset? (confirm with 'y' or 'yes'): ").strip().lower()
+    while True:
+        action = input("Enter action (enter item name, batch_import, or counter_reset): ").strip().lower()
+        if action == "counter_reset":
+            confirmation = input("Are you sure you want to reset the counter? (confirm with 'y' or 'yes'): ").strip().lower()
             if confirmation in ["y", "yes"]:
-                for file in os.listdir():
-                    if file.endswith(".html"):
-                        os.remove(file)
-                print("HTML files deleted.")
-                delete_google_sheet_entries()
-                print("Google Sheet entries deleted.")
-                commit_and_push_to_github(tracking_number)
-                print("Changes committed and pushed to GitHub.")
+                with open("tracking_number.txt", "w") as file:
+                    file.write("0000")
+                print("Tracking number reset to 0000.")
             else:
                 print("Reset canceled.")
+        elif action == "batch_import":
+            batch_import()
         else:
-            item_name = action
-            create_html_file(tracking_number, item_name)
-            update_google_sheets(item_name, tracking_number)
-            commit_and_push_to_github(tracking_number)
-            print(f"Item '{item_name}' added with tracking number '{tracking_number}'.")
+            tracking_number = get_next_tracking_number()
+            if action == "complete_reset":
+                confirmation = input("Are you sure you want to perform a complete reset? (confirm with 'y' or 'yes'): ").strip().lower()
+                if confirmation in ["y", "yes"]:
+                    for file in os.listdir():
+                        if file.endswith(".html"):
+                            os.remove(file)
+                    print("HTML files deleted.")
+                    delete_google_sheet_entries()
+                    print("Google Sheet entries deleted.")
+                    commit_and_push_to_github(tracking_number)
+                    print("Changes committed and pushed to GitHub.")
+                else:
+                    print("Reset canceled.")
+            else:
+                item_name = action
+                create_html_file(tracking_number, item_name)
+                update_google_sheets(item_name, tracking_number)
+                commit_and_push_to_github(tracking_number)
+                print(f"Item '{item_name}' added with tracking number '{tracking_number}'.")
 
 if __name__ == "__main__":
     main()
